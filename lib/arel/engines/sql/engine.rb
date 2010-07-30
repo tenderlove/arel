@@ -1,12 +1,13 @@
 module Arel
   module Sql
     class Engine
+      attr_reader :driver
       def initialize(ar = nil)
-        @ar = ar
+        @driver = ar
       end
 
       def connection
-        @ar ? @ar.connection : nil
+        @driver ? @driver.connection : nil
       end
 
       def adapter_name

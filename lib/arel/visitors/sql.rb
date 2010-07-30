@@ -3,7 +3,9 @@ module Arel
     class Sql
       def initialize environment
         @environment = environment
-        @engine = environment.engine
+        @engine      = environment.engine
+        @christener  = nil
+        @connection  = nil
       end
 
       def accept object
@@ -12,13 +14,31 @@ module Arel
       end
 
       def visit_Arel_Attribute o
-        formatter = Arel::Sql::WhereCondition.new(o.relation)
-        formatter.attribute o
+        sql = nil
+        @engine.driver.connection_pool.with_connection do |connection|
+          @connection = connection
+          @christener = o.relation.christener
+          sql = "#{quote_table_name(name_for(o.original_relation))}.#{quote_column_name(o.name)}"
+        end
+        sql
       end
 
       alias :visit_Arel_Sql_Attributes_Integer :visit_Arel_Attribute
       alias :visit_Arel_Sql_Attributes_String :visit_Arel_Attribute
       alias :visit_Arel_Sql_Attributes_Time :visit_Arel_Attribute
+
+      private
+      def quote_table_name name
+        @connection.quote_table_name name
+      end
+
+      def quote_column_name name
+        @connection.quote_column_name name
+      end
+
+      def name_for thing
+        @christener.name_for thing
+      end
     end
   end
 end
