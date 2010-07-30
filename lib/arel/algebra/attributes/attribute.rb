@@ -299,8 +299,9 @@ module Arel
       object.to_sql(Sql::Attribute.new(self))
     end
 
-    def to_sql(formatter = Sql::WhereCondition.new(relation))
-      formatter.attribute self
+    def to_sql(formatter = nil)
+      viz = Arel::Visitors::Sql.new relation
+      viz.accept self
     end
   end
 end
