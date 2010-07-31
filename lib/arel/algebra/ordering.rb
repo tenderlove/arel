@@ -18,8 +18,9 @@ module Arel
       (attribute.eval(row1) <=> attribute.eval(row2)) * direction
     end
 
-    def to_sql(formatter = Sql::OrderClause.new(relation))
-      formatter.ordering self
+    def to_sql(formatter = nil)
+      viz = Arel::Visitors::Sql.new relation
+      viz.accept self
     end
   end
 
