@@ -95,7 +95,13 @@ module Arel
     end
 
     def order_clauses
-      orders.collect { |o| o.to_sql(Sql::OrderClause.new(self)) }
+      orders.map { |o|
+        if Ordering === o
+          o.to_sql
+        else
+          o.value
+        end
+      }
     end
 
     def each
