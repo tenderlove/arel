@@ -26,6 +26,7 @@ module Arel
       alias :visit_Arel_Sql_Attributes_Integer :visit_Arel_Attribute
       alias :visit_Arel_Sql_Attributes_String :visit_Arel_Attribute
       alias :visit_Arel_Sql_Attributes_Time :visit_Arel_Attribute
+      alias :visit_Arel_Sql_Attributes_Boolean :visit_Arel_Attribute
 
       private
       def quote_table_name name
