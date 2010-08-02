@@ -78,11 +78,12 @@ module Arel
     end
 
     def order_clauses
+      raise "fixme"
       orders.map { |o|
-        if Ordering === o
-          o.to_sql
-        else
+        if Value === o
           o.value
+        else
+          o.to_sql
         end
       }
     end

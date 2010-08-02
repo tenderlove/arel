@@ -136,18 +136,31 @@ module Arel
         "GROUP BY  #{groups.join(', ')}"
       end
 
+      def order_clauses o
+        orders = o.orders.map { |thing|
+          case thing
+          # FIXME: again, figure out how to visit Value
+          when Value
+            thing.value
+          else
+            visit thing
+          end
+        }
+        return if orders.empty?
+        "ORDER BY  #{orders.join(', ')}"
+      end
+
       def build_clauses o
         joins   = o.joins(o)
         wheres  = o.where_clauses
         havings = o.having_clauses
-        orders  = o.order_clauses
 
         clauses = [ "",
           joins,
           ("WHERE     #{wheres.join(' AND ')}" unless wheres.empty?),
           group_clauses(o),
           ("HAVING    #{havings.join(' AND ')}" unless havings.empty?),
-          ("ORDER BY  #{orders.join(', ')}" unless orders.empty?)
+          order_clauses(o)
         ].compact.join ' '
 
         offset = o.skipped
