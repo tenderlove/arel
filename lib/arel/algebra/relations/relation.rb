@@ -69,17 +69,6 @@ module Arel
       end
     end
 
-    def select_clauses
-      attributes.map { |a|
-        case a
-        when Value
-          a.value
-        else
-          a.to_sql(Sql::SelectClause.new(self))
-        end
-      }
-    end
-
     def from_clauses
       sources.empty? ? table_sql : sources
     end

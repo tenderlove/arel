@@ -21,14 +21,32 @@ module Arel
       def visit_Arel_Project o
         projections = o.projections
         if Count === projections.first && projections.size == 1 &&
-          (o.taken.present? || o.wheres.present?) && o.joins(self).blank?
+          (o.taken.present? || o.wheres.present?) && o.joins(o).blank?
           subquery = [
             "SELECT 1 FROM #{o.from_clauses}", build_clauses(o)
           ].join ' '
           query = "SELECT COUNT(*) AS count_id FROM (#{subquery}) AS subquery"
         else
+
+          # FIXME: The AST is broken.  We need a SubProject or AliasProject
+          # class to represent a Project that is aliased or a SubProject of a
+          # project.
+          selects = o.attributes.map do |attr|
+            case attr
+            when Project
+              "(#{visit_Arel_Project(attr)}) AS #{quote_table_name(name_for(attr.table))}"
+            # FIXME: again, the AST is broken. we need to figure out Quoted
+            # values vs non-quoted values and add nodes appropriately in the
+            # AST
+            when Value
+              attr.value
+            else
+              visit attr
+            end
+          end.join(', ')
+
           query = [
-            "SELECT     #{o.select_clauses.join(', ')}",
+            "SELECT     #{selects}",
             "FROM       #{o.from_clauses}",
             build_clauses(o)
           ].compact.join ' '
