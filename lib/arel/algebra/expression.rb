@@ -12,8 +12,9 @@ module Arel
       true
     end
 
-    def to_sql(formatter = Sql::SelectClause.new(relation))
-      formatter.expression self
+    def to_sql(formatter = nil)
+      viz = Arel::Visitors::Sql.new relation
+      viz.accept self
     end
 
     def as(aliaz)
