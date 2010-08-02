@@ -18,7 +18,7 @@ module Arel
 
       private
 
-      def visit_Arel_Relation o
+      def visit_Arel_Take o
         projections = o.projections
         if Count === projections.first && projections.size == 1 &&
           (o.taken.present? || o.wheres.present?) && o.joins(o).blank?
@@ -27,45 +27,47 @@ module Arel
           ].join ' '
           "SELECT COUNT(*) AS count_id FROM (#{subquery}) AS subquery"
         else
+          visit_Arel_Relation o
+        end
+      end
+      alias :visit_Arel_From :visit_Arel_Take
+      alias :visit_Arel_Project :visit_Arel_Take
 
-          # FIXME: The AST is broken.  We need a SubProject or AliasProject
-          # class to represent a Project that is aliased or a SubProject of a
-          # project.
-          selects = o.attributes.map do |attr|
-            case attr
-            when Project
-              "(#{visit_Arel_Project(attr)}) AS #{quote_table_name(name_for(attr.table))}"
+      def visit_Arel_Relation o
+        # FIXME: The AST is broken.  We need a SubProject or AliasProject
+        # class to represent a Project that is aliased or a SubProject of a
+        # project.
+        selects = o.attributes.map do |attr|
+          case attr
+          when Project
+            "(#{visit_Arel_Project(attr)}) AS #{quote_table_name(name_for(attr.table))}"
             # FIXME: again, the AST is broken. we need to figure out Quoted
             # values vs non-quoted values and add nodes appropriately in the
             # AST
-            when Value
-              attr.value
-            else
-              visit attr
-            end
-          end.join(', ')
+          when Value
+            attr.value
+          else
+            visit attr
+          end
+        end.join(', ')
 
-          [
-            "SELECT     #{selects}",
-            "FROM       #{from_clauses o}",
-            build_clauses(o)
-          ].compact.join ' '
-        end
+        [
+          "SELECT     #{selects}",
+          "FROM       #{from_clauses o}",
+          build_clauses(o)
+        ].compact.join ' '
       end
 
-      alias :visit_Arel_Table :visit_Arel_Relation
-      alias :visit_Arel_Project :visit_Arel_Relation
-      alias :visit_Arel_Where :visit_Arel_Relation
-      alias :visit_Arel_Take :visit_Arel_Relation
-      alias :visit_Arel_Skip :visit_Arel_Relation
-      alias :visit_Arel_Order :visit_Arel_Relation
-      alias :visit_Arel_Lock :visit_Arel_Relation
-      alias :visit_Arel_StringJoin :visit_Arel_Relation
-      alias :visit_Arel_InnerJoin :visit_Arel_Relation
-      alias :visit_Arel_Having :visit_Arel_Relation
-      alias :visit_Arel_Group :visit_Arel_Relation
-      alias :visit_Arel_From :visit_Arel_Relation
       alias :visit_Arel_Alias :visit_Arel_Relation
+      alias :visit_Arel_Group :visit_Arel_Relation
+      alias :visit_Arel_Having :visit_Arel_Relation
+      alias :visit_Arel_InnerJoin :visit_Arel_Relation
+      alias :visit_Arel_Lock :visit_Arel_Relation
+      alias :visit_Arel_Order :visit_Arel_Relation
+      alias :visit_Arel_Skip :visit_Arel_Relation
+      alias :visit_Arel_StringJoin :visit_Arel_Relation
+      alias :visit_Arel_Table :visit_Arel_Relation
+      alias :visit_Arel_Where :visit_Arel_Relation
 
       def visit_Arel_Expression o
         # FIXME: remove this when we figure out how to visit a "Value"
