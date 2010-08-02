@@ -18,14 +18,14 @@ module Arel
 
       private
 
-      def visit_Arel_Project o
+      def visit_Arel_Relation o
         projections = o.projections
         if Count === projections.first && projections.size == 1 &&
           (o.taken.present? || o.wheres.present?) && o.joins(o).blank?
           subquery = [
-            "SELECT 1 FROM #{o.from_clauses}", build_clauses(o)
+            "SELECT 1 FROM #{from_clauses o}", build_clauses(o)
           ].join ' '
-          query = "SELECT COUNT(*) AS count_id FROM (#{subquery}) AS subquery"
+          "SELECT COUNT(*) AS count_id FROM (#{subquery}) AS subquery"
         else
 
           # FIXME: The AST is broken.  We need a SubProject or AliasProject
@@ -45,26 +45,27 @@ module Arel
             end
           end.join(', ')
 
-          query = [
+          [
             "SELECT     #{selects}",
-            "FROM       #{o.from_clauses}",
+            "FROM       #{from_clauses o}",
             build_clauses(o)
           ].compact.join ' '
         end
-        query
       end
-      alias :visit_Arel_Table :visit_Arel_Project
-      alias :visit_Arel_Where :visit_Arel_Project
-      alias :visit_Arel_Take :visit_Arel_Project
-      alias :visit_Arel_Skip :visit_Arel_Project
-      alias :visit_Arel_Order :visit_Arel_Project
-      alias :visit_Arel_Lock :visit_Arel_Project
-      alias :visit_Arel_StringJoin :visit_Arel_Project
-      alias :visit_Arel_InnerJoin :visit_Arel_Project
-      alias :visit_Arel_Having :visit_Arel_Project
-      alias :visit_Arel_Group :visit_Arel_Project
-      alias :visit_Arel_From :visit_Arel_Project
-      alias :visit_Arel_Alias :visit_Arel_Project
+
+      alias :visit_Arel_Table :visit_Arel_Relation
+      alias :visit_Arel_Project :visit_Arel_Relation
+      alias :visit_Arel_Where :visit_Arel_Relation
+      alias :visit_Arel_Take :visit_Arel_Relation
+      alias :visit_Arel_Skip :visit_Arel_Relation
+      alias :visit_Arel_Order :visit_Arel_Relation
+      alias :visit_Arel_Lock :visit_Arel_Relation
+      alias :visit_Arel_StringJoin :visit_Arel_Relation
+      alias :visit_Arel_InnerJoin :visit_Arel_Relation
+      alias :visit_Arel_Having :visit_Arel_Relation
+      alias :visit_Arel_Group :visit_Arel_Relation
+      alias :visit_Arel_From :visit_Arel_Relation
+      alias :visit_Arel_Alias :visit_Arel_Relation
 
       def visit_Arel_Expression o
         # FIXME: remove this when we figure out how to visit a "Value"
@@ -119,17 +120,30 @@ module Arel
         send method, object
       end
 
+      def group_clauses o
+        groups = o.groupings.map { |g|
+          case g
+          # FIXME: again, figure out how to visit Value
+          when Value
+            g.value
+          else
+            visit g
+          end
+        }
+        return if groups.empty?
+        "GROUP BY  #{groups.join(', ')}"
+      end
+
       def build_clauses o
         joins   = o.joins(o)
         wheres  = o.where_clauses
-        groups  = o.group_clauses
         havings = o.having_clauses
         orders  = o.order_clauses
 
         clauses = [ "",
           joins,
           ("WHERE     #{wheres.join(' AND ')}" unless wheres.empty?),
-          ("GROUP BY  #{groups.join(', ')}" unless groups.empty?),
+          group_clauses(o),
           ("HAVING    #{havings.join(' AND ')}" unless havings.empty?),
           ("ORDER BY  #{orders.join(', ')}" unless orders.empty?)
         ].compact.join ' '
@@ -142,6 +156,10 @@ module Arel
         # FIXME: this needs to be in the adapter specific subclasses
         #clauses << " #{o.locked}" unless o.locked.blank?
         clauses unless clauses.blank?
+      end
+
+      def from_clauses o
+        o.sources.empty? ? o.table_sql : o.sources
       end
     end
   end

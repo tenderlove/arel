@@ -69,16 +69,8 @@ module Arel
       end
     end
 
-    def from_clauses
-      sources.empty? ? table_sql : sources
-    end
-
     def where_clauses
       wheres.map { |w| w.value }
-    end
-
-    def group_clauses
-      groupings.collect { |g| g.to_sql(Sql::GroupClause.new(self)) }
     end
 
     def having_clauses
