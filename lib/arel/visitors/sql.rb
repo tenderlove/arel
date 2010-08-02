@@ -11,11 +11,31 @@ module Arel
       def accept object
         @engine.driver.connection_pool.with_connection do |connection|
           @connection = connection
-          @christener = object.relation.christener
-          method      = :"visit_#{object.class.name.gsub('::', '_')}"
 
-          send method, object
+          visit object
         end
+      end
+
+      private
+
+      def visit_Arel_Expression o
+        # FIXME: remove this when we figure out how to visit a "Value"
+        val = Value === o.attribute ? o.attribute.value : visit(o.attribute)
+
+        "#{o.function_sql}(#{val})" +
+          (o.alias ? " AS #{quote_column_name(o.alias)}" : " AS #{o.function_sql.to_s.downcase}_id")
+      end
+      alias :visit_Arel_Count :visit_Arel_Expression
+      alias :visit_Arel_Sum :visit_Arel_Expression
+      alias :visit_Arel_Average :visit_Arel_Expression
+      alias :visit_Arel_Minimum :visit_Arel_Expression
+      alias :visit_Arel_Maximum :visit_Arel_Expression
+
+      def visit_Arel_Distinct o
+        # FIXME: remove this when we figure out how to visit a "Value"
+        val = Value === o.attribute ? o.attribute.value : visit(o.attribute)
+        "#{o.function_sql} #{val}" +
+          (o.alias ? " AS #{quote_column_name(o.alias)}" : '')
       end
 
       def visit_Arel_Ordering o
@@ -32,7 +52,6 @@ module Arel
       alias :visit_Arel_Sql_Attributes_Time :visit_Arel_Attribute
       alias :visit_Arel_Sql_Attributes_Boolean :visit_Arel_Attribute
 
-      private
       def quote_table_name name
         @connection.quote_table_name name
       end
@@ -43,6 +62,13 @@ module Arel
 
       def name_for thing
         @christener.name_for thing
+      end
+
+      def visit object
+        @christener = object.relation.christener
+        method      = :"visit_#{object.class.name.gsub('::', '_')}"
+
+        send method, object
       end
     end
   end
