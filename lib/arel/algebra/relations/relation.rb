@@ -6,6 +6,8 @@ module Arel
 
     attr_reader :count
 
+    def relation; self; end
+
     def session
       Session.instance
     end

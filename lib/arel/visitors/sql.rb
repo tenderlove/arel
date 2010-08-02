@@ -18,6 +18,36 @@ module Arel
 
       private
 
+      def visit_Arel_Project o
+        projections = o.projections
+        if Count === projections.first && projections.size == 1 &&
+          (o.taken.present? || o.wheres.present?) && o.joins(self).blank?
+          subquery = [
+            "SELECT 1 FROM #{o.from_clauses}", build_clauses(o)
+          ].join ' '
+          query = "SELECT COUNT(*) AS count_id FROM (#{subquery}) AS subquery"
+        else
+          query = [
+            "SELECT     #{o.select_clauses.join(', ')}",
+            "FROM       #{o.from_clauses}",
+            build_clauses(o)
+          ].compact.join ' '
+        end
+        query
+      end
+      alias :visit_Arel_Table :visit_Arel_Project
+      alias :visit_Arel_Where :visit_Arel_Project
+      alias :visit_Arel_Take :visit_Arel_Project
+      alias :visit_Arel_Skip :visit_Arel_Project
+      alias :visit_Arel_Order :visit_Arel_Project
+      alias :visit_Arel_Lock :visit_Arel_Project
+      alias :visit_Arel_StringJoin :visit_Arel_Project
+      alias :visit_Arel_InnerJoin :visit_Arel_Project
+      alias :visit_Arel_Having :visit_Arel_Project
+      alias :visit_Arel_Group :visit_Arel_Project
+      alias :visit_Arel_From :visit_Arel_Project
+      alias :visit_Arel_Alias :visit_Arel_Project
+
       def visit_Arel_Expression o
         # FIXME: remove this when we figure out how to visit a "Value"
         val = Value === o.attribute ? o.attribute.value : visit(o.attribute)
@@ -69,6 +99,31 @@ module Arel
         method      = :"visit_#{object.class.name.gsub('::', '_')}"
 
         send method, object
+      end
+
+      def build_clauses o
+        joins   = o.joins(o)
+        wheres  = o.where_clauses
+        groups  = o.group_clauses
+        havings = o.having_clauses
+        orders  = o.order_clauses
+
+        clauses = [ "",
+          joins,
+          ("WHERE     #{wheres.join(' AND ')}" unless wheres.empty?),
+          ("GROUP BY  #{groups.join(', ')}" unless groups.empty?),
+          ("HAVING    #{havings.join(' AND ')}" unless havings.empty?),
+          ("ORDER BY  #{orders.join(', ')}" unless orders.empty?)
+        ].compact.join ' '
+
+        offset = o.skipped
+        limit = o.taken
+        @connection.add_limit_offset!(clauses, :limit => limit,
+                                  :offset => offset) if offset || limit
+
+        # FIXME: this needs to be in the adapter specific subclasses
+        #clauses << " #{o.locked}" unless o.locked.blank?
+        clauses unless clauses.blank?
       end
     end
   end
