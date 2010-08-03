@@ -14,7 +14,7 @@ module Arel
 
       def select_sql
         viz = Arel::Visitors::Sql.new relation
-        return viz.accept relation
+        viz.accept relation
       end
 
       def delete_sql

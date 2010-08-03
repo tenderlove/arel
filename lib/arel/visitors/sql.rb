@@ -2,9 +2,7 @@ module Arel
   module Visitors
     class Sql
       def initialize environment
-        @dispatch_cache = Hash.new do |h,k|
-          h[k] = :"visit_#{k.name.gsub('::', '_')}"
-        end
+        @dispatch_cache = {}
         @environment = environment
         @engine      = environment.engine
         @christener  = nil
@@ -31,6 +29,8 @@ module Arel
         projections = o.projections
         if Count === projections.first && projections.size == 1 &&
           (o.taken.present? || o.wheres.present?) && o.joins(o).blank?
+
+          @christener = o.relation.christener
           subquery = [
             "SELECT 1 FROM #{from_clauses o}", build_clauses(o)
           ].join ' '
@@ -43,6 +43,8 @@ module Arel
       alias :visit_Arel_Project :visit_Arel_Take
 
       def visit_Arel_Relation o
+        @christener = o.relation.christener
+
         # FIXME: The AST is broken.  We need a SubProject or AliasProject
         # class to represent a Project that is aliased or a SubProject of a
         # project.
@@ -92,12 +94,14 @@ module Arel
       end
 
       def visit_Arel_Ordering o
+        @christener = o.relation.christener
         "#{quote_table_name(name_for(o.attribute.original_relation))}.#{quote_column_name(o.attribute.name)} #{o.direction_sql}"
       end
       alias :visit_Arel_Ascending :visit_Arel_Ordering
       alias :visit_Arel_Descending :visit_Arel_Ordering
 
       def visit_Arel_Attribute o
+        @christener = o.relation.christener
         "#{quote_table_name(name_for(o.original_relation))}.#{quote_column_name(o.name)}"
       end
       alias :visit_Arel_Sql_Attributes_Integer :visit_Arel_Attribute
@@ -126,11 +130,9 @@ module Arel
       end
 
       def visit object
-        # FIXME: why don't some objects have a relation method?
-        if object.respond_to?(:relation)
-          @christener = object.relation.christener
-        end
-        send @dispatch_cache[object.class], object
+        klass = object.class
+        m = @dispatch_cache[klass] ||= :"visit_#{klass.name.gsub('::', '_')}"
+        send m, object
       end
 
       def group_clauses o
