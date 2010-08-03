@@ -150,16 +150,29 @@ module Arel
         "ORDER BY  #{orders.join(', ')}"
       end
 
+      def having_clauses o
+        havings = o.havings.map { |g|
+          case g
+          # FIXME: again, figure out how to visit Value
+          when Value
+            g.value
+          else
+            visit g
+          end
+        }
+        return if havings.empty?
+        "HAVING    #{havings.join(' AND ')}"
+      end
+
       def build_clauses o
         joins   = o.joins(o)
         wheres  = o.where_clauses
-        havings = o.having_clauses
 
         clauses = [ "",
           joins,
           ("WHERE     #{wheres.join(' AND ')}" unless wheres.empty?),
           group_clauses(o),
-          ("HAVING    #{havings.join(' AND ')}" unless havings.empty?),
+          having_clauses(o),
           order_clauses(o)
         ].compact.join ' '
 

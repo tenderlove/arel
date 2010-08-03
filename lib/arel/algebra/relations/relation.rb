@@ -73,12 +73,7 @@ module Arel
       wheres.map { |w| w.value }
     end
 
-    def having_clauses
-      havings.collect { |g| g.to_sql(Sql::HavingClause.new(self)) }
-    end
-
     def order_clauses
-      raise "fixme"
       orders.map { |o|
         if Value === o
           o.value
