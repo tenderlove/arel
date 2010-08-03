@@ -179,7 +179,23 @@ module Arel
       end
 
       def from_clauses o
-        o.sources.empty? ? o.table_sql : o.sources
+        if o.sources.empty?
+          table = o.table
+          case table
+          when Table
+            table_name = table.name
+            return table_name if table_name =~ /\s/
+
+            unique_name = name_for(table)
+
+            quote_table_name(table_name) +
+              (table_name != unique_name ? " #{quote_table_name(unique_name)}" : '')
+          else
+            table.table_sql
+          end
+        else
+          o.sources
+        end
       end
     end
   end

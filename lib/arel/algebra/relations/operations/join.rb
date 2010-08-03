@@ -42,7 +42,11 @@ module Arel
     end
 
     def table_sql(formatter = Sql::TableReference.new(self))
-      relation1.externalize.table_sql(formatter)
+      table.table_sql(formatter)
+    end
+
+    def table
+      relation1.externalize
     end
 
     def joins(environment, formatter = Sql::TableReference.new(environment))
