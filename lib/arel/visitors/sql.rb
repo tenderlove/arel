@@ -18,6 +18,12 @@ module Arel
 
       private
 
+      def visit_Arel_Binary o
+        sql = quote(o.operand2.value, o.operand1.column)
+        "#{visit o.operand1} #{o.predicate_sql} #{sql}"
+      end
+      alias :visit_Arel_Predicates_Equality :visit_Arel_Binary
+
       def visit_Arel_Take o
         projections = o.projections
         if Count === projections.first && projections.size == 1 &&
@@ -111,12 +117,19 @@ module Arel
         @connection.quote_column_name name
       end
 
+      def quote value, column = nil
+        @connection.quote value, column
+      end
+
       def name_for thing
         @christener.name_for thing
       end
 
       def visit object
-        @christener = object.relation.christener
+        # FIXME: why don't some objects have a relation method?
+        if object.respond_to?(:relation)
+          @christener = object.relation.christener
+        end
         method      = :"visit_#{object.class.name.gsub('::', '_')}"
 
         send method, object
@@ -164,13 +177,26 @@ module Arel
         "HAVING    #{havings.join(' AND ')}"
       end
 
+      def where_clauses o
+        wheres = o.wheres.map { |w|
+          case w
+          # FIXME: again, figure out how to visit Value
+          when Value
+            w.value
+          else
+            visit w
+          end
+        }
+        return if wheres.empty?
+        "WHERE     #{wheres.join(' AND ')}"
+      end
+
       def build_clauses o
         joins   = o.joins(o)
-        wheres  = o.where_clauses
 
         clauses = [ "",
           joins,
-          ("WHERE     #{wheres.join(' AND ')}" unless wheres.empty?),
+          where_clauses(o),
           group_clauses(o),
           having_clauses(o),
           order_clauses(o)

@@ -70,10 +70,12 @@ module Arel
     end
 
     def where_clauses
+      warn "where_clauses is deprecated #{caller.first}" if $VERBOSE
       wheres.map { |w| w.value }
     end
 
     def order_clauses
+      warn "order_clauses is deprecated #{caller.first}" if $VERBOSE
       orders.map { |o|
         if Value === o
           o.value
