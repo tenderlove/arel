@@ -47,11 +47,6 @@ module Arel
           case attr
           when Project
             "(#{visit_Arel_Project(attr)}) AS #{quote_table_name(name_for(attr.table))}"
-            # FIXME: again, the AST is broken. we need to figure out Quoted
-            # values vs non-quoted values and add nodes appropriately in the
-            # AST
-          when Value
-            attr.value
           else
             visit attr
           end
@@ -76,8 +71,7 @@ module Arel
       alias :visit_Arel_Where :visit_Arel_Relation
 
       def visit_Arel_Expression o
-        # FIXME: remove this when we figure out how to visit a "Value"
-        val = Value === o.attribute ? o.attribute.value : visit(o.attribute)
+        val = visit(o.attribute)
 
         "#{o.function_sql}(#{val})" +
           (o.alias ? " AS #{quote_column_name(o.alias)}" : " AS #{o.function_sql.to_s.downcase}_id")
@@ -89,8 +83,7 @@ module Arel
       alias :visit_Arel_Maximum :visit_Arel_Expression
 
       def visit_Arel_Distinct o
-        # FIXME: remove this when we figure out how to visit a "Value"
-        val = Value === o.attribute ? o.attribute.value : visit(o.attribute)
+        val = visit(o.attribute)
         "#{o.function_sql} #{val}" +
           (o.alias ? " AS #{quote_column_name(o.alias)}" : '')
       end
@@ -108,6 +101,10 @@ module Arel
       alias :visit_Arel_Sql_Attributes_String :visit_Arel_Attribute
       alias :visit_Arel_Sql_Attributes_Time :visit_Arel_Attribute
       alias :visit_Arel_Sql_Attributes_Boolean :visit_Arel_Attribute
+
+      def visit_Arel_Value o
+        o.value
+      end
 
       def quote_table_name name
         @connection.quote_table_name name
@@ -136,57 +133,25 @@ module Arel
       end
 
       def group_clauses o
-        groups = o.groupings.map { |g|
-          case g
-          # FIXME: again, figure out how to visit Value
-          when Value
-            g.value
-          else
-            visit g
-          end
-        }
+        groups = o.groupings.map { |g| visit g }
         return if groups.empty?
         "GROUP BY  #{groups.join(', ')}"
       end
 
       def order_clauses o
-        orders = o.orders.map { |thing|
-          case thing
-          # FIXME: again, figure out how to visit Value
-          when Value
-            thing.value
-          else
-            visit thing
-          end
-        }
+        orders = o.orders.map { |thing| visit thing }
         return if orders.empty?
         "ORDER BY  #{orders.join(', ')}"
       end
 
       def having_clauses o
-        havings = o.havings.map { |g|
-          case g
-          # FIXME: again, figure out how to visit Value
-          when Value
-            g.value
-          else
-            visit g
-          end
-        }
+        havings = o.havings.map { |g| visit g }
         return if havings.empty?
         "HAVING    #{havings.join(' AND ')}"
       end
 
       def where_clauses o
-        wheres = o.wheres.map { |w|
-          case w
-          # FIXME: again, figure out how to visit Value
-          when Value
-            w.value
-          else
-            visit w
-          end
-        }
+        wheres = o.wheres.map { |w| visit w }
         return if wheres.empty?
         "WHERE     #{wheres.join(' AND ')}"
       end
