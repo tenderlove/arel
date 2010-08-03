@@ -2,6 +2,9 @@ module Arel
   module Visitors
     class Sql
       def initialize environment
+        @dispatch_cache = Hash.new do |h,k|
+          h[k] = :"visit_#{k.name.gsub('::', '_')}"
+        end
         @environment = environment
         @engine      = environment.engine
         @christener  = nil
@@ -127,9 +130,7 @@ module Arel
         if object.respond_to?(:relation)
           @christener = object.relation.christener
         end
-        method      = :"visit_#{object.class.name.gsub('::', '_')}"
-
-        send method, object
+        send @dispatch_cache[object.class], object
       end
 
       def group_clauses o
