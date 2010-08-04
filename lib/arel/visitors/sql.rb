@@ -21,16 +21,30 @@ module Arel
 
       def visit_Arel_Predicates_CompoundPredicate o
         # FIXME: remove the to_sql
-        "(#{o.operand1.to_sql} #{o.predicate_sql} #{o.operand2.to_sql})"
+        "(#{visit o.operand1} #{o.predicate_sql} #{o.operand2.to_sql})"
       end
       alias :visit_Arel_Predicates_Or :visit_Arel_Predicates_CompoundPredicate
       alias :visit_Arel_Predicates_And :visit_Arel_Predicates_CompoundPredicate
 
       def visit_Arel_Predicates_Binary o
-        sql = quote(o.operand2.value, o.operand1.column)
+        op1 = o.operand1
+        op2 = o.operand2
+
+        case op2
+        when Arel::Value
+          val = o.operand2.value
+        else
+          val = op2
+        end
+
+        sql = quote(val, o.operand1.column)
         "#{visit o.operand1} #{o.predicate_sql} #{sql}"
       end
       alias :visit_Arel_Predicates_Equality :visit_Arel_Predicates_Binary
+      alias :visit_Arel_Predicates_GreaterThanOrEqualTo :visit_Arel_Predicates_Binary
+
+      # FIXME: this one is for test
+      alias :visit_Arel_Predicates_ConcreteBinary :visit_Arel_Predicates_Binary
 
       def visit_Arel_Take o
         projections = o.projections
