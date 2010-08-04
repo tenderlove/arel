@@ -26,23 +26,44 @@ module Arel
       alias :visit_Arel_Predicates_Or :visit_Arel_Predicates_CompoundPredicate
       alias :visit_Arel_Predicates_And :visit_Arel_Predicates_CompoundPredicate
 
+      def format op1, op2, column
+        case op2
+        when Arel::Value
+          quote(op2.value, column)
+        when Arel::Attribute
+          visit op2
+        when Arel::Table
+          "(#{visit op2})"
+        when ::String, ::Fixnum
+          quote(op2, column)
+        when ::NilClass
+          'NULL'
+        when ::Array
+          if op2.any?
+            "(" + op2.collect { |e| format(op1, e, column) }.join(', ') + ")"
+          else
+            "(NULL)"
+          end
+        when ::Range
+          "#{quote(op2.begin, column)} AND #{quote(op2.end, column)}"
+        else
+          raise "Don't understand type #{op2.class}"
+        end
+      end
+
       def visit_Arel_Predicates_Binary o
         op1 = o.operand1
         op2 = o.operand2
 
-        case op2
-        when Arel::Value
-          val = o.operand2.value
-        else
-          val = op2
-        end
+        sql = format(op1, op2, op1.column)
 
-        sql = quote(val, o.operand1.column)
         "#{visit o.operand1} #{o.predicate_sql} #{sql}"
       end
       alias :visit_Arel_Predicates_Equality :visit_Arel_Predicates_Binary
       alias :visit_Arel_Predicates_GreaterThanOrEqualTo :visit_Arel_Predicates_Binary
       alias :visit_Arel_Predicates_LessThan :visit_Arel_Predicates_Binary
+      alias :visit_Arel_Predicates_Inequality :visit_Arel_Predicates_Binary
+      alias :visit_Arel_Predicates_In :visit_Arel_Predicates_Binary
 
       # FIXME: this one is for test
       alias :visit_Arel_Predicates_ConcreteBinary :visit_Arel_Predicates_Binary

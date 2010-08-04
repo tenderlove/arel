@@ -125,6 +125,7 @@ module Arel
       def initialize left, right
         super(left)
         @operand2 = right
+        raise if Developer === right
       end
 
       def relation
@@ -148,7 +149,9 @@ module Arel
       end
 
       def to_sql(formatter = nil)
-        "#{operand1.to_sql} #{predicate_sql} #{operand1.format(operand2)}"
+        viz = Arel::Visitors::Sql.new relation
+        viz.accept self
+        #"#{operand1.to_sql} #{predicate_sql} #{operand1.format(operand2)}"
       end
       alias :value :to_sql
     end
