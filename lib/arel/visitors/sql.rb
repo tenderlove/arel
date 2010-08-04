@@ -51,6 +51,24 @@ module Arel
         end
       end
 
+      def visit_Arel_Predicates_In o
+        op1 = o.operand1
+        op2 = o.operand2
+
+        if op2.is_a?(Range) && op2.exclude_end?
+          visit Arel::Predicates::GreaterThanOrEqualTo.new(op1, op2.begin).and(
+            Arel::Predicates::LessThan.new(op1, op2.end)
+          )
+        else
+          if Arel::Value === op2
+            sql = quote(op2.value, op1.column)
+            "#{visit o.operand1} #{o.predicate_sql} (#{sql})"
+          else
+            visit_Arel_Predicates_Binary o
+          end
+        end
+      end
+
       def visit_Arel_Predicates_Binary o
         op1 = o.operand1
         op2 = o.operand2
@@ -63,7 +81,6 @@ module Arel
       alias :visit_Arel_Predicates_GreaterThanOrEqualTo :visit_Arel_Predicates_Binary
       alias :visit_Arel_Predicates_LessThan :visit_Arel_Predicates_Binary
       alias :visit_Arel_Predicates_Inequality :visit_Arel_Predicates_Binary
-      alias :visit_Arel_Predicates_In :visit_Arel_Predicates_Binary
 
       # FIXME: this one is for test
       alias :visit_Arel_Predicates_ConcreteBinary :visit_Arel_Predicates_Binary
