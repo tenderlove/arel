@@ -125,7 +125,6 @@ module Arel
       def initialize left, right
         super(left)
         @operand2 = right
-        raise if Developer === right
       end
 
       def relation
