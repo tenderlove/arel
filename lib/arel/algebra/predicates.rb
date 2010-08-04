@@ -126,6 +126,14 @@ module Arel
         @operand2 = right
       end
 
+      def relation
+        rel = operand1
+        until rel.respond_to?(:relation)
+          rel = rel.operand1
+        end
+        rel.relation
+      end
+
       def ==(other)
         super && @operand2 == other.operand2
       end
@@ -150,6 +158,8 @@ module Arel
       end
 
       def to_sql(formatter = nil)
+        viz = Arel::Visitors::Sql.new relation
+        viz.accept self
         "(#{operand1.to_sql(formatter)} #{predicate_sql} #{operand2.to_sql(formatter)})"
       end
     end

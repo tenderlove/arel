@@ -19,6 +19,13 @@ module Arel
 
       private
 
+      def visit_Arel_Predicates_CompoundPredicate o
+        # FIXME: remove the to_sql
+        "(#{o.operand1.to_sql} #{o.predicate_sql} #{o.operand2})"
+      end
+      alias :visit_Arel_Predicates_Or :visit_Arel_Predicates_CompoundPredicate
+      alias :visit_Arel_Predicates_And :visit_Arel_Predicates_CompoundPredicate
+
       def visit_Arel_Binary o
         sql = quote(o.operand2.value, o.operand1.column)
         "#{visit o.operand1} #{o.predicate_sql} #{sql}"
