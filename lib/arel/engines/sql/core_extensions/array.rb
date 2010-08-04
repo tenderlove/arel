@@ -17,6 +17,14 @@ module Arel
         "NOT IN"
       end
 
+      def bind relation
+        self
+      end
+
+      def eval relation
+        self
+      end
+
       Array.send(:include, self)
     end
   end
