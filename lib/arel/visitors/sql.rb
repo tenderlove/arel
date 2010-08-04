@@ -32,10 +32,8 @@ module Arel
           quote(op2.value, column)
         when Arel::Attribute
           visit op2
-        when Arel::Table
+        when Arel::Table, Arel::Project
           "(#{visit op2})"
-        when ::String, ::Fixnum
-          quote(op2, column)
         when ::NilClass
           'NULL'
         when ::Array
@@ -47,7 +45,7 @@ module Arel
         when ::Range
           "#{quote(op2.begin, column)} AND #{quote(op2.end, column)}"
         else
-          raise "Don't understand type #{op2.class}"
+          quote(op2, column)
         end
       end
 
