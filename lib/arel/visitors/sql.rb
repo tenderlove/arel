@@ -21,7 +21,7 @@ module Arel
 
       def visit_Arel_Predicates_CompoundPredicate o
         # FIXME: remove the to_sql
-        "(#{visit o.operand1} #{o.predicate_sql} #{o.operand2.to_sql})"
+        "(#{visit o.operand1} #{o.predicate_sql} #{visit o.operand2})"
       end
       alias :visit_Arel_Predicates_Or :visit_Arel_Predicates_CompoundPredicate
       alias :visit_Arel_Predicates_And :visit_Arel_Predicates_CompoundPredicate
@@ -42,6 +42,7 @@ module Arel
       end
       alias :visit_Arel_Predicates_Equality :visit_Arel_Predicates_Binary
       alias :visit_Arel_Predicates_GreaterThanOrEqualTo :visit_Arel_Predicates_Binary
+      alias :visit_Arel_Predicates_LessThan :visit_Arel_Predicates_Binary
 
       # FIXME: this one is for test
       alias :visit_Arel_Predicates_ConcreteBinary :visit_Arel_Predicates_Binary
