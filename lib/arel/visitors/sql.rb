@@ -79,6 +79,7 @@ module Arel
       alias :visit_Arel_Predicates_GreaterThanOrEqualTo :visit_Arel_Predicates_Binary
       alias :visit_Arel_Predicates_LessThan :visit_Arel_Predicates_Binary
       alias :visit_Arel_Predicates_Inequality :visit_Arel_Predicates_Binary
+      alias :visit_Arel_Predicates_GreaterThan :visit_Arel_Predicates_Binary
 
       # FIXME: this one is for test
       alias :visit_Arel_Predicates_ConcreteBinary :visit_Arel_Predicates_Binary
