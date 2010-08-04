@@ -21,7 +21,7 @@ module Arel
 
       def visit_Arel_Predicates_CompoundPredicate o
         # FIXME: remove the to_sql
-        "(#{o.operand1.to_sql} #{o.predicate_sql} #{o.operand2})"
+        "(#{o.operand1.to_sql} #{o.predicate_sql} #{o.operand2.to_sql})"
       end
       alias :visit_Arel_Predicates_Or :visit_Arel_Predicates_CompoundPredicate
       alias :visit_Arel_Predicates_And :visit_Arel_Predicates_CompoundPredicate
