@@ -101,7 +101,8 @@ module Arel
       end
 
       def to_sql(formatter = nil)
-        "#{predicate_sql} (#{operand.to_sql(formatter)})"
+        viz = Arel::Visitors::Sql.new relation
+        viz.accept self
       end
     end
 
@@ -160,7 +161,6 @@ module Arel
       def to_sql(formatter = nil)
         viz = Arel::Visitors::Sql.new relation
         viz.accept self
-        "(#{operand1.to_sql(formatter)} #{predicate_sql} #{operand2.to_sql(formatter)})"
       end
     end
 
