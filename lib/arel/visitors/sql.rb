@@ -227,9 +227,13 @@ module Arel
             o.join_sql,
             o.relation2.externalize.table_sql(formatter),
             ("ON" unless o.predicates.blank?),
-            (o.ons + o.relation2.externalize.wheres).collect { |p| p.bind(@environment.relation).to_sql(Arel::Sql::WhereClause.new(@environment)) }.join(' AND ')
+            (o.ons + o.relation2.externalize.wheres).map { |p|
+              visit p.bind(@environment.relation)
+            }.join(' AND ')
           ].compact.join(" ")
-          [o.relation1.joins(@environment), this_join, o.relation2.joins(@environment)].compact.join(" ")
+          [
+            join_clauses(o.relation1), this_join, join_clauses(o.relation2)
+          ].compact.join(" ")
         else
           joins = o.joins(o)
         end
