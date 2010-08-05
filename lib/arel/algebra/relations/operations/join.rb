@@ -73,10 +73,6 @@ module Arel
       end
       result
     end
-
-    def to_sql(formatter = nil)
-      compiler.select_sql
-    end
   end
 
   class InnerJoin < Join
