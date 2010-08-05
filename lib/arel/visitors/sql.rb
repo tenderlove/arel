@@ -216,9 +216,9 @@ module Arel
       end
 
       def join_clauses o
+        return if Table === o
+
         case o
-        when Table
-          nil
         when StringJoin
           [join_clauses(o.relation1), o.relation2].compact.join(" ")
         when Join
@@ -243,9 +243,14 @@ module Arel
             }.join(' AND '),
             join_clauses(o.relation2)
           ].compact.join(" ")
-        else
-          #puts o.class
-          o.joins(o)
+
+        when Compound
+          # FIXME: Relation should probably be a class, and things that include
+          # it should inherit from it.
+          until Table === o || Join === o
+            o = o.relation
+          end
+          join_clauses(o)
         end
       end
 
