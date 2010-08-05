@@ -290,9 +290,7 @@ module Arel
           when Externalization
             "(#{visit table.relation}) #{quote_table_name(name_for(table))}"
           when Join
-            until Table === table
-              table = table.table
-            end
+            table = table.table until Table === table
             from_clauses(table)
           end
         else
