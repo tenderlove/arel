@@ -41,10 +41,7 @@ module Arel
     end
 
     def to_sql(formatter = nil)
-      sql = compiler.select_sql
-
-      return sql unless formatter
-      formatter.select sql, self
+      compiler.select_sql
     end
 
     def christener
