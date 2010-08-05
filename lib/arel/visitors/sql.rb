@@ -240,7 +240,7 @@ module Arel
         if o.sources.empty?
           table = o.table
           case table
-          when Table
+          when Table, Where, Alias
             table_name = table.name
             return table_name if table_name =~ /\s/
 
@@ -248,8 +248,13 @@ module Arel
 
             quote_table_name(table_name) +
               (table_name != unique_name ? " #{quote_table_name(unique_name)}" : '')
-          else
-            table.table_sql
+          when Externalization
+            "(#{visit table.relation}) #{quote_table_name(name_for(table))}"
+          when Join
+            until Table === table
+              table = table.table
+            end
+            from_clauses(table)
           end
         else
           o.sources
