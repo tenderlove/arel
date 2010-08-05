@@ -218,24 +218,34 @@ module Arel
       def join_clauses o
         case o
         when Table
-          joins = nil
+          nil
         when StringJoin
           [join_clauses(o.relation1), o.relation2].compact.join(" ")
         when Join
-          formatter = Arel::Sql::TableReference.new(@environment)
-          this_join = [
+          ext = o.relation2.externalize
+
+          case ext
+          when Externalization
+            formatter = Arel::Sql::TableReference.new(@environment)
+            from = ext.table_sql(formatter)
+            #from = from_clauses(ext)
+          else
+            from = from_clauses(ext)
+          end
+
+          [
+            join_clauses(o.relation1),
             o.join_sql,
-            o.relation2.externalize.table_sql(formatter),
+            from,
             ("ON" unless o.predicates.blank?),
             (o.ons + o.relation2.externalize.wheres).map { |p|
               visit p.bind(@environment.relation)
-            }.join(' AND ')
-          ].compact.join(" ")
-          [
-            join_clauses(o.relation1), this_join, join_clauses(o.relation2)
+            }.join(' AND '),
+            join_clauses(o.relation2)
           ].compact.join(" ")
         else
-          joins = o.joins(o)
+          #puts o.class
+          o.joins(o)
         end
       end
 
