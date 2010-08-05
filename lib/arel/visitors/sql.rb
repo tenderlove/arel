@@ -1,6 +1,8 @@
 module Arel
   module Visitors
     class Sql
+      DISPATCH = {}
+
       def initialize environment
         @dispatch_cache = {}
         @environment = environment
@@ -80,9 +82,6 @@ module Arel
       alias :visit_Arel_Predicates_LessThan :visit_Arel_Predicates_Binary
       alias :visit_Arel_Predicates_Inequality :visit_Arel_Predicates_Binary
       alias :visit_Arel_Predicates_GreaterThan :visit_Arel_Predicates_Binary
-
-      # FIXME: this one is for test
-      alias :visit_Arel_Predicates_ConcreteBinary :visit_Arel_Predicates_Binary
 
       def visit_Arel_Take o
         projections = o.projections
@@ -189,9 +188,7 @@ module Arel
       end
 
       def visit object
-        klass = object.class
-        m = @dispatch_cache[klass] ||= :"visit_#{klass.name.gsub('::', '_')}"
-        send m, object
+        send DISPATCH[object.class], object
       end
 
       def group_clauses o
@@ -257,6 +254,14 @@ module Arel
         else
           o.sources
         end
+      end
+
+      self.private_instance_methods(false).each do |method|
+        method = method.to_s
+        next unless method =~ /^visit_(.*)$/
+
+        constant = $1.split('_').inject(Object) { |m,s| m.const_get s }
+        DISPATCH[constant] = method.to_sym
       end
     end
   end

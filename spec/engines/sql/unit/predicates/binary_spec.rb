@@ -9,6 +9,9 @@ module Arel
         end
       end
 
+      Arel::Visitors::Sql::DISPATCH[ConcreteBinary] =
+        :visit_Arel_Predicates_Binary
+
       before do
         @relation = Arel::Table.new(:users)
         @attribute1 = @relation[:id]

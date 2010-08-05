@@ -9,6 +9,8 @@ module Arel
         @attribute2 = @relation[:name]
         class ConcreteBinary < Binary
         end
+        Arel::Visitors::Sql::DISPATCH[ConcreteBinary] =
+          :visit_Arel_Predicates_Binary
       end
 
       describe '#bind' do

@@ -3,7 +3,6 @@ require 'active_support/core_ext/module/delegation'
 require 'active_support/core_ext/object/blank'
 
 require 'arel/recursion/base_case'
-require 'arel/visitors/sql'
 
 module Arel
   require 'arel/algebra'
@@ -13,3 +12,5 @@ module Arel
 
   autoload :Session, 'arel/session'
 end
+
+require 'arel/visitors/sql'
