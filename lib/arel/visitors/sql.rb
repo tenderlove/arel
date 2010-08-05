@@ -215,11 +215,29 @@ module Arel
         "WHERE     #{wheres.join(' AND ')}"
       end
 
-      def build_clauses o
-        joins   = o.joins(o)
+      def join_clauses o
+        case o
+        when Table
+          joins = nil
+        when StringJoin
+          [join_clauses(o.relation1), o.relation2].compact.join(" ")
+        when Join
+          formatter = Arel::Sql::TableReference.new(@environment)
+          this_join = [
+            o.join_sql,
+            o.relation2.externalize.table_sql(formatter),
+            ("ON" unless o.predicates.blank?),
+            (o.ons + o.relation2.externalize.wheres).collect { |p| p.bind(@environment.relation).to_sql(Arel::Sql::WhereClause.new(@environment)) }.join(' AND ')
+          ].compact.join(" ")
+          [o.relation1.joins(@environment), this_join, o.relation2.joins(@environment)].compact.join(" ")
+        else
+          joins = o.joins(o)
+        end
+      end
 
+      def build_clauses o
         clauses = [ "",
-          joins,
+          join_clauses(o),
           where_clauses(o),
           group_clauses(o),
           having_clauses(o),
