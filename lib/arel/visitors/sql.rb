@@ -226,9 +226,13 @@ module Arel
 
           case ext
           when Externalization
-            formatter = Arel::Sql::TableReference.new(@environment)
-            from = ext.table_sql(formatter)
-            #from = from_clauses(ext)
+            case ext.relation
+            when Take, Project, Where
+              from = from_clauses(ext)
+            else
+              name = quote_table_name(name_for(ext))
+              from = "(" + visit(ext.relation) + ") #{name}"
+            end
           else
             from = from_clauses(ext)
           end
@@ -247,9 +251,7 @@ module Arel
         when Compound
           # FIXME: Relation should probably be a class, and things that include
           # it should inherit from it.
-          until Table === o || Join === o
-            o = o.relation
-          end
+          o = o.relation until Table === o || Join === o
           join_clauses(o)
         end
       end
