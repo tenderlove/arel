@@ -249,9 +249,7 @@ module Arel
           ].compact.join(" ")
 
         when Compound
-          # FIXME: Relation should probably be a class, and things that include
-          # it should inherit from it.
-          o = o.relation until Table === o || Join === o
+          o = o.relation while Compound === o
           join_clauses(o)
         end
       end
