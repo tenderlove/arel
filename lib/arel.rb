@@ -14,3 +14,4 @@ module Arel
 end
 
 require 'arel/visitors/sql'
+require 'arel/visitors/dot'
